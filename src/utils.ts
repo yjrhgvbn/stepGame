@@ -1,3 +1,6 @@
+import { map, sample } from 'lodash';
+import { g } from 'vitest/dist/types-e3c9754d';
+
 interface MoveStep {
   dir: string;
   step: number;
@@ -6,12 +9,32 @@ interface MoveStep {
   point: number[];
 }
 
-export interface Grid {
+export class Point {
   num: number;
-  isStart: boolean;
-  isEnd: boolean;
-  isPath: boolean;
-  pathNum: number;
+  isPath: boolean = false;
+  prev: Point | null = null;
+  next: Point | null = null;
+  constructor(num: number, prev: Point | null = null, next: Point | null = null) {
+    this.num = num;
+    if (prev) this.prepend(prev);
+    if (next) this.append(next);
+  }
+  setHead() {
+    if (this.prev) this.prev.next = null;
+    this.prev = null;
+  }
+  setTail() {
+    if (this.next) this.next.prev = null;
+    this.next = null;
+  }
+  append(point: Point) {
+    this.next = point;
+    point.prev = this;
+  }
+  prepend(point: Point) {
+    this.prev = point;
+    point.next = this;
+  }
 }
 
 /**
@@ -19,110 +42,143 @@ export interface Grid {
  */
 export function generateGrid(size: number, steps: number, minStep: number = 1, maxStep: number = 4) {
   let { grid, randownSteps } = tryGenerateGrid(size, steps, minStep, maxStep);
-  while (!randownSteps || !isMinStep(grid, randownSteps.startPoint, randownSteps.endPoint, 4)) {
-    ({ grid, randownSteps } = tryGenerateGrid(size, steps, minStep, maxStep));
-  }
-  if (!randownSteps) throw new Error('生成网格失败');
-  const res: Grid[][] = grid.map((row, rowIndex) =>
-    row.map((num, columnIndex) => {
-      const isStart = randownSteps!.startPoint[0] === rowIndex && randownSteps!.startPoint[1] === columnIndex;
-      const isEnd = randownSteps!.endPoint[0] === rowIndex && randownSteps!.endPoint[1] === columnIndex;
-      return {
-        num,
-        isStart,
-        isEnd,
-        isPath: false,
-        pathNum: 0,
-      };
-    }),
-  );
-  res[randownSteps.startPoint[0]][randownSteps.startPoint[1]].isPath = true;
-  res[randownSteps.startPoint[0]][randownSteps.startPoint[1]].pathNum = 0;
-  randownSteps.moveList.forEach((moveStep, i) => {
-    const [x, y] = moveStep.point;
-    res[x][y].isPath = true;
-    res[x][y].pathNum = i + 1;
-  });
-  return res;
+  // while (!randownSteps || !isMinStep(grid!, randownSteps.startPoint, randownSteps.endPoint, 4)) {
+  //   ({ grid, randownSteps } = tryGenerateGrid(size, steps, minStep, maxStep));
+  // }
+  if (!randownSteps || !grid) throw new Error('生成网格失败');
+  grid = applyStep(grid, randownSteps);
+  return grid;
 }
 
 /**
- * 生成随机网格，可能比指定步数少，可能要重复多次
+ * 生成随机网格
  */
 function tryGenerateGrid(size: number, steps: number, minStep: number = 1, maxStep: number = 4) {
-  const grid = randomGrid(size, minStep, maxStep);
+  const linkGrid = randomGrid(size, minStep, maxStep);
+  // TODO: 这里转化是没必要的，后来改成了生成链表，但是这里还是用的数字网格，后面有时间再改
+  const grid = linkGrid.map((row) => row.map((item) => item.num));
   const randownSteps = generateRandownSteps(grid, steps, minStep, maxStep);
-  if (!randownSteps) return { grid };
-  fillEndPoint(grid, randownSteps.endPoint, maxStep);
-  grid[randownSteps.endPoint[0]][randownSteps.endPoint[1]] = 0;
+  if (!randownSteps) return { linkGrid };
+  // fillEndPoint(grid, randownSteps.endPoint, maxStep);
+  // grid[randownSteps.endPoint[0]][randownSteps.endPoint[1]] = 0;
   return {
-    grid,
+    grid: linkGrid,
     randownSteps,
   };
 }
 
 /**
+ *  根据步骤修改格子值， 并修改指针
+ */
+function applyStep(grid: Point[][], randownSteps: { startPoint: number[]; endPoint: number[]; moveList: MoveStep[] }) {
+  const { startPoint, endPoint, moveList } = randownSteps;
+  let prePoint = grid[startPoint[0]][startPoint[1]];
+  prePoint.setHead();
+  prePoint.num = 0;
+  moveList.forEach((moveStep, i) => {
+    if (i === 0) return;
+    const [x, y] = moveStep.point;
+    prePoint.append(grid![x][y]);
+    grid![x][y].num = moveStep.step;
+    prePoint = grid![x][y];
+  });
+  prePoint.append(grid![endPoint[0]][endPoint[1]]);
+  grid![endPoint[0]][endPoint[1]].setTail();
+  return grid;
+}
+/**
  * 判断最小步数
  */
-function isMinStep(grid: number[][], startPoint: number[], endPoint: number[], minStep: number) {
-  const { length: rowLength } = grid;
-  const { length: columnLength } = grid[0];
-  const queue: number[][] = [startPoint];
-  const marketGrid: boolean[][] = new Array(rowLength).fill([]).map(() => new Array(columnLength).fill(false));
-  marketGrid[startPoint[0]][startPoint[1]] = true;
-  for (let i = 0; i < minStep; i++) {
-    const len = queue.length;
-    for (let j = 0; j < len; j++) {
-      const [x, y] = queue.shift()!;
-      if (x === endPoint[0] && y === endPoint[1]) return false;
-      const val = grid[x][y];
-      if (x - val >= 0 && !marketGrid[x - val][y]) {
-        queue.push([x - val, y]);
-        marketGrid[x - val][y] = true;
-      }
-      if (x + val < rowLength && !marketGrid[x + val][y]) {
-        queue.push([x + val, y]);
-        marketGrid[x + val][y] = true;
-      }
-      if (y - val >= 0 && !marketGrid[x][y - val]) {
-        queue.push([x, y - val]);
-        marketGrid[x][y - val] = true;
-      }
-      if (y + val < columnLength && !marketGrid[x][y + val]) {
-        queue.push([x, y + val]);
-        marketGrid[x][y + val] = true;
-      }
-    }
-  }
-  return true;
-}
-
-/**
- * 填充终点,终点两边都可达
- */
-function fillEndPoint(grid: number[][], endPoint: number[], maxStep: number) {
-  for (let i = 1; i <= maxStep; i++) {
-    const topX = endPoint[0] - i;
-    const bottomX = endPoint[0] + i;
-    const leftY = endPoint[1] - i;
-    if (topX >= 0) grid[topX][endPoint[1]] = i;
-    if (bottomX < grid.length) grid[bottomX][endPoint[1]] = i;
-    if (leftY >= 0) grid[endPoint[0]][leftY] = i;
-  }
-}
+// function isMinStep(grid: Point[][], startPoint: number[], endPoint: number[], minStep: number) {
+//   const { length: rowLength } = grid;
+//   const { length: columnLength } = grid[0];
+//   const queue: number[][] = [startPoint];
+//   const marketGrid: boolean[][] = new Array(rowLength).fill([]).map(() => new Array(columnLength).fill(false));
+//   marketGrid[startPoint[0]][startPoint[1]] = true;
+//   for (let i = 0; i < minStep; i++) {
+//     const len = queue.length;
+//     for (let j = 0; j < len; j++) {
+//       const [x, y] = queue.shift()!;
+//       if (x === endPoint[0] && y === endPoint[1]) return false;
+//       const { num: val } = grid[x][y];
+//       if (x - val >= 0 && !marketGrid[x - val][y]) {
+//         queue.push([x - val, y]);
+//         marketGrid[x - val][y] = true;
+//       }
+//       if (x + val < rowLength && !marketGrid[x + val][y]) {
+//         queue.push([x + val, y]);
+//         marketGrid[x + val][y] = true;
+//       }
+//       if (y - val >= 0 && !marketGrid[x][y - val]) {
+//         queue.push([x, y - val]);
+//         marketGrid[x][y - val] = true;
+//       }
+//       if (y + val < columnLength && !marketGrid[x][y + val]) {
+//         queue.push([x, y + val]);
+//         marketGrid[x][y + val] = true;
+//       }
+//     }
+//   }
+//   return true;
+// }
 
 /**
  * 生产随机网格
  */
 function randomGrid(size: number, minStep: number = 2, maxStep: number = 4) {
-  const grid: number[][] = [];
-  for (let i = 0; i < size; i++) {
-    grid.push([]);
-    for (let j = 0; j < size; j++) {
-      grid[i].push(randomInt(minStep, maxStep));
+  const grid: Point[][] = new Array(size).fill([]).map(() => new Array(size).fill(null));
+  let prePoint: Point | undefined;
+  let preCoordinate: number[] = [];
+  for (let i = 0; i < size * size; ) {
+    if (!prePoint) {
+      const newCoordinate = pickUnmarkPoint();
+      if (!newCoordinate) throw new Error('生成网格失败');
+      prePoint = new Point(randomInt(minStep, maxStep));
+      preCoordinate = newCoordinate;
+    } else {
+      const newCoordinate = pickUnmarkSidePoint(preCoordinate![0], preCoordinate![1]);
+      if (!newCoordinate) {
+        prePoint = undefined;
+        continue;
+      }
+      const newPoint = new Point(randomInt(minStep, maxStep), prePoint);
+      prePoint.num = Math.abs(newCoordinate[0] - preCoordinate[0]) + Math.abs(newCoordinate[1] - preCoordinate[1]);
+      prePoint = newPoint;
+      preCoordinate = newCoordinate;
     }
+    grid[preCoordinate![0]][preCoordinate![1]] = prePoint;
+    i++;
   }
   return grid;
+
+  function pickUnmarkSidePoint(x: number, y: number) {
+    const dir = [
+      [-1, 0],
+      [1, 0],
+      [0, -1],
+      [0, 1],
+    ];
+    const queue: number[][] = [];
+    for (let i = minStep; i <= maxStep; i++) {
+      dir.forEach(([dx, dy]) => {
+        const newX = x + dx * i;
+        const newY = y + dy * i;
+        if (newX >= 0 && newX < size && newY >= 0 && newY < size && !grid[newX][newY]) {
+          queue.push([newX, newY]);
+        }
+      });
+    }
+    return sample(queue);
+  }
+  function pickUnmarkPoint() {
+    const queue: number[][] = [];
+    for (let i = 0; i < size; i++) {
+      for (let j = 0; j < size; j++) {
+        if (!grid[i][j]) queue.push([i, j]);
+      }
+    }
+    return sample(queue);
+  }
 }
 
 /**
