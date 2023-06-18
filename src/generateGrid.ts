@@ -1,5 +1,4 @@
-import { map, sample } from 'lodash';
-import { g } from 'vitest/dist/types-e3c9754d';
+import { sample } from 'lodash';
 
 interface MoveStep {
   dir: string;
@@ -12,6 +11,7 @@ interface MoveStep {
 export class Point {
   num: number;
   isPath: boolean = false;
+  text: string = '';
   prev: Point | null = null;
   next: Point | null = null;
   constructor(num: number, prev: Point | null = null, next: Point | null = null) {
@@ -75,15 +75,18 @@ function applyStep(grid: Point[][], randownSteps: { startPoint: number[]; endPoi
   let prePoint = grid[startPoint[0]][startPoint[1]];
   prePoint.setHead();
   prePoint.num = 0;
+  prePoint.isPath = true;
   moveList.forEach((moveStep, i) => {
     if (i === 0) return;
     const [x, y] = moveStep.point;
     prePoint.append(grid![x][y]);
+    grid![x][y].isPath = true;
     grid![x][y].num = moveStep.step;
     prePoint = grid![x][y];
   });
   prePoint.append(grid![endPoint[0]][endPoint[1]]);
   grid![endPoint[0]][endPoint[1]].setTail();
+  grid![endPoint[0]][endPoint[1]].isPath = true;
   return grid;
 }
 /**
@@ -251,7 +254,7 @@ function generateRandownSteps(
     endPoint = trySmallStepMove(moveList, endPoint, columns);
   }
   // 在默认的移动步骤上，大约80%的情况不需要递归
-  if (endPoint[1] !== columns || hasBackStep(moveList)) {
+  if (endPoint[1] !== columns || hasBackStep(moveList) || !isCorrectSteps(moveList, rows)) {
     return generateRandownSteps(grid, steps, minStep, maxStep);
   }
   applySetps(grid, moveList, startPoint);
@@ -307,7 +310,7 @@ function trySmallStepMove(moveList: MoveStep[], targetPoint: number[], columns: 
         const { dir } = moveList[matchIndex];
         // 在终点左边
         if (distance > 0) {
-          if (currentPoint[1] + 1 > columns) continue;
+          if (currentPoint[1] + 1 > columns || currentPoint[1] + 1 < 0) continue;
           if (dir === 'l') {
             moveList[matchIndex].step--;
             currentPoint[1]++;
@@ -317,7 +320,7 @@ function trySmallStepMove(moveList: MoveStep[], targetPoint: number[], columns: 
             currentPoint[1]++;
           }
         } else {
-          if (currentPoint[1] - 1 < 0) continue;
+          if (currentPoint[1] - 1 < 0 || currentPoint[1] - 1 > columns) continue;
           if (dir === 'l') {
             moveList[matchIndex].step++;
             currentPoint[1]--;
@@ -361,6 +364,23 @@ function hasBackStep(setpList: { step: number; dir: string }[]) {
   }
   return false;
 }
+/**
+ *  判断步骤是否正确
+ */
+function isCorrectSteps(setpList: { step: number; dir: string }[], rowSize: number) {
+  let sum = 0;
+  for (let i = 0; i < setpList.length; i++) {
+    const { step, dir } = setpList[i];
+    if (dir === 'l') {
+      sum -= step;
+    } else if (dir === 'r') {
+      sum += step;
+    }
+    if (sum < 0 || sum > rowSize) return false;
+  }
+  return true;
+}
+
 // 在指定范围内获取最大宽度
 export function getBoundWidthFn(length: number, minStep: number = 2, maxStep: number = 4) {
   return function (postion: number) {

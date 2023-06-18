@@ -1,4 +1,4 @@
-import { getBoundWidthFn } from './utils';
+import { getBoundWidthFn } from '../src/generateGrid';
 import { expect, test } from 'vitest';
 
 test('getBoundWidthFn', () => {
