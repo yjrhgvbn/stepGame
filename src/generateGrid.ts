@@ -51,6 +51,49 @@ export function generateGrid(size: number, steps: number, minStep: number = 1, m
 }
 
 /**
+ * 根据当前网格生成四字成语的起点
+ */
+export function pickIdiomStartPoints(grid: Point[][], minLeftPointSize = 0) {
+  const allStartPoints: Point[] = [];
+  const len = grid.length;
+  grid.forEach((row) => {
+    row.forEach((point) => {
+      if (!point.prev && !point.isPath) {
+        allStartPoints.push(point);
+      }
+    });
+  });
+  const startPoints: Point[] = [];
+  const quene: Point[] = allStartPoints;
+  while (quene.length) {
+    const first = quene.shift()!;
+    first.setHead();
+    let cur: Point | null = first;
+    for (let i = 0; i < 3; i++) {
+      if (cur?.next) cur = cur.next;
+      else cur = null;
+    }
+    if (cur) {
+      startPoints.push(first);
+      if (cur.next) quene.push(cur.next);
+      cur.setTail();
+    }
+  }
+  while (len * len - startPoints.length * 4 < minLeftPointSize) {
+    startPoints.splice(Math.floor(Math.random() * startPoints.length), 1);
+  }
+  const resStartPoints: Point[] = [];
+  grid.forEach((row) => {
+    row.forEach((point) => {
+      if (!point.prev && !startPoints.includes(point)) {
+        resStartPoints.push(point);
+      }
+    });
+  });
+  return [startPoints, resStartPoints];
+}
+
+/**
  * 生成随机网格
  */
 function tryGenerateGrid(size: number, steps: number, minStep: number = 1, maxStep: number = 4) {
