@@ -71,22 +71,21 @@ function tryGenerateGrid(size: number, steps: number, minStep: number = 1, maxSt
  *  根据步骤修改格子值， 并修改指针
  */
 function applyStep(grid: Point[][], randownSteps: { startPoint: number[]; endPoint: number[]; moveList: MoveStep[] }) {
-  const { startPoint, endPoint, moveList } = randownSteps;
-  let prePoint = grid[startPoint[0]][startPoint[1]];
-  prePoint.setHead();
-  prePoint.num = 0;
-  prePoint.isPath = true;
-  moveList.forEach((moveStep, i) => {
-    if (i === 0) return;
-    const [x, y] = moveStep.point;
-    prePoint.append(grid![x][y]);
-    grid![x][y].isPath = true;
-    grid![x][y].num = moveStep.step;
-    prePoint = grid![x][y];
-  });
-  prePoint.append(grid![endPoint[0]][endPoint[1]]);
-  grid![endPoint[0]][endPoint[1]].setTail();
-  grid![endPoint[0]][endPoint[1]].isPath = true;
+  const { endPoint, moveList } = randownSteps;
+  const coordinates = [...moveList.map((item) => item.point), endPoint];
+  let prePoint: Point | null = null;
+  for (let i = 0; i < coordinates.length; i++) {
+    const [x, y] = coordinates[i];
+    const curPoint = grid[x][y];
+    if (curPoint.prev) curPoint.prev.next = null;
+    if (curPoint.next) curPoint.next.prev = null;
+    if (i === 0) curPoint.setHead();
+    curPoint.isPath = true;
+    if (prePoint) prePoint.num = moveList[i - 1].step;
+    if (prePoint) prePoint.append(curPoint);
+    prePoint = curPoint;
+  }
+  prePoint?.setTail();
   return grid;
 }
 /**
