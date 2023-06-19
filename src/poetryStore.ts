@@ -89,18 +89,17 @@ const initSate = randomPoetry();
 
 type PoertyStore = {
   resetPoetry: () => void;
-  updatePoetry: (character: PoertyCharacter) => void;
+  updatePoetry: (key: string) => void;
 } & Poerty;
 export const usePoetryStore = create<PoertyStore>((set, get) => ({
   ...initSate,
   resetPoetry: () => set(randomPoetry()),
-  updatePoetry: (character: PoertyCharacter) => {
+  updatePoetry: (key) => {
     set(
       produce((state: PoertyStore) => {
-        // character.isShow = true;
         const line = state.lines.find((line) => line.key === state.anserLine.key);
         if (line) {
-          const tCharacter = line.characters.find((c) => c.key === character.key);
+          const tCharacter = line.characters.find((c) => c.key === key);
           if (tCharacter) {
             tCharacter.isShow = true;
           }

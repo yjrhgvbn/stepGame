@@ -50,11 +50,34 @@ export function generateGrid(size: number, steps: number, minStep: number = 1, m
   return grid;
 }
 
+export function loopStartPoint<T extends Point>(startPoint: T, fn: (p: T, index: number) => Partial<T> | void) {
+  let cur: T | null = startPoint;
+  let index = 0;
+  while (cur) {
+    const extendData = fn(cur, index);
+    if (extendData) Object.assign(cur, extendData);
+    cur = cur.next as T;
+    index++;
+  }
+}
+
+/**
+ * 扩展网格类型，主要是为了保留指针指向
+ */
+export function extendGrid<T extends Point>(grid: Point[][], extend: (p: T, x: number, y: number) => Omit<T, keyof Point>) {
+  grid.forEach((row, x) => {
+    row.forEach((point, y) => {
+      Object.assign(point, extend(point as T, x, y));
+    });
+  });
+  return grid as T[][];
+}
+
 /**
  * 根据当前网格生成四字成语的起点
  */
-export function pickIdiomStartPoints(grid: Point[][], minLeftPointSize = 0) {
-  const allStartPoints: Point[] = [];
+export function pickIdiomStartPoints<T extends Point>(grid: T[][], minLeftPointSize = 0) {
+  const allStartPoints: T[] = [];
   const len = grid.length;
   grid.forEach((row) => {
     row.forEach((point) => {
@@ -63,26 +86,26 @@ export function pickIdiomStartPoints(grid: Point[][], minLeftPointSize = 0) {
       }
     });
   });
-  const startPoints: Point[] = [];
-  const quene: Point[] = allStartPoints;
+  const startPoints: T[] = [];
+  const quene: T[] = allStartPoints;
   while (quene.length) {
     const first = quene.shift()!;
     first.setHead();
-    let cur: Point | null = first;
+    let cur: T | null = first;
     for (let i = 0; i < 3; i++) {
-      if (cur?.next) cur = cur.next;
+      if (cur?.next) cur = cur.next as T;
       else cur = null;
     }
     if (cur) {
       startPoints.push(first);
-      if (cur.next) quene.push(cur.next);
+      if (cur.next) quene.push(cur.next as T);
       cur.setTail();
     }
   }
   while (len * len - startPoints.length * 4 < minLeftPointSize) {
     startPoints.splice(Math.floor(Math.random() * startPoints.length), 1);
   }
-  const resStartPoints: Point[] = [];
+  const resStartPoints: T[] = [];
   grid.forEach((row) => {
     row.forEach((point) => {
       if (!point.prev && !startPoints.includes(point)) {
