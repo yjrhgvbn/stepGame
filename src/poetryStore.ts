@@ -1,7 +1,7 @@
 import tangPoertyList from '../assets/poetry/tang.json';
+import { getGenerateKey } from './utils';
 import { immerable, produce } from 'immer';
 import { countBy, maxBy, sample } from 'lodash';
-import { generate } from 'randomstring';
 import { create } from 'zustand';
 
 export interface Poerty {
@@ -16,10 +16,10 @@ export class PoertyCharacter {
   text: string;
   isShow: boolean;
   key: string;
-  constructor(text: string) {
+  constructor(key: string, text: string) {
     this.text = text;
     this.isShow = true;
-    this.key = generate(5);
+    this.key = key;
   }
 }
 
@@ -29,11 +29,11 @@ export class PoertyLine {
   punctuation: string; // 符号
   lineNum: number; // 行数
   key: string; // 唯一标识
-  constructor(lineNum: number) {
+  constructor(key: string, lineNum: number) {
     this.lineNum = lineNum;
     this.characters = [];
     this.punctuation = '';
-    this.key = generate(5);
+    this.key = key;
   }
 }
 
@@ -44,20 +44,26 @@ const CHINESE_ERG =
  * 随机一首诗
  */
 export function randomPoetry(): Poerty {
+  const { getKey } = getGenerateKey('$poetry_');
   const initPoerty = sample(tangPoertyList) || tangPoertyList[0];
+  // const initPoerty = {
+  //   author: '杜甫',
+  //   title: '月夜忆舍弟',
+  //   paragraphs: ['戍鼓断人行，边秋一雁声。', '露从今夜白，月是故乡明。', '有弟皆分散，无家问死生。', '寄书长不达，况乃未休兵。'],
+  // };
   const { author, paragraphs, title } = initPoerty;
   const lines: PoertyLine[] = [];
   paragraphs.forEach((paragraph, index) => {
     const line = index + 1;
-    let newLine: PoertyLine = new PoertyLine(line);
+    let newLine: PoertyLine = new PoertyLine(getKey(), line);
     const characters = paragraph.split('');
     for (const character of characters) {
       if (!CHINESE_ERG.test(character)) {
         newLine.punctuation = character;
         lines.push(newLine);
-        newLine = new PoertyLine(line);
+        newLine = new PoertyLine(getKey(), line);
       } else {
-        newLine.characters.push(new PoertyCharacter(character));
+        newLine.characters.push(new PoertyCharacter(getKey(), character));
       }
     }
   });
@@ -70,8 +76,9 @@ export function randomPoetry(): Poerty {
  */
 function pickAnserLine(lines: PoertyLine[]): PoertyLine {
   const lineCount = countBy(lines, (line) => line.lineNum);
-  // 一行诗词句大于3的去掉，排除一些特殊句
-  const filterCountLines = lines.filter((line) => lineCount[line.lineNum] <= 3);
+  // 一行诗词句大于4的去掉，排除一些特殊句
+  let filterCountLines = lines.filter((line) => lineCount[line.lineNum] <= 4);
+  if (!filterCountLines.length) filterCountLines = lines;
   // TODO: 也许需要优化
   // 随机取一个长度出现最多的句子
   const mostLineSize = maxBy(Object.entries(countBy(filterCountLines, (line) => line.characters.length)), (item) => item[1])![0];
