@@ -3,13 +3,14 @@ import { getGenerateKey } from './utils';
 import { produce } from 'immer';
 import { create } from 'zustand';
 
-interface Idiom {
+export interface Idiom {
   key: string;
   words: IdiomWord[];
   explanation: string;
+  isComplete: boolean;
 }
 
-interface IdiomWord {
+export interface IdiomWord {
   text: string;
   key: string;
   isSeletd: boolean;
@@ -29,6 +30,7 @@ export function randomIdioms(length: number): Idiom[] {
       words,
       key: getKey(),
       explanation: idioms[index].explanation,
+      isComplete: false,
     });
   }
   return res;
@@ -46,21 +48,22 @@ export const useIdiomsStore = create<IdiomsStore>((set) => ({
   completeIdioms: [],
   randomIdioms: (size: number) => {
     const idioms = randomIdioms(size);
-    set({ idioms: idioms });
+    set({ idioms: idioms, completeIdioms: [] });
     return idioms;
   },
   changeSelect: (id: string, isSeletd = true) => {
     let res = { isComplete: false };
     set(
       produce((state: IdiomsStore) => {
-        for (const idiom of state.idioms) {
-          for (let i = 0; i < idiom.words.length; i++) {
-            const word = idiom.words[i];
+        for (let i = 0; i < state.idioms.length; i++) {
+          const idiom = state.idioms[i];
+          for (let j = 0; j < idiom.words.length; j++) {
+            const word = idiom.words[j];
             if (word.key === id) {
               word.isSeletd = isSeletd;
               if (idiom.words.every((item) => item.isSeletd)) {
                 state.completeIdioms.push(idiom);
-                state.idioms.splice(i, 1);
+                state.idioms[i].isComplete = true;
                 res = { isComplete: true };
               }
               return state;
@@ -71,4 +74,14 @@ export const useIdiomsStore = create<IdiomsStore>((set) => ({
     );
     return res;
   },
+}));
+
+interface IdiomsAnimateStore {
+  postion: { x: number; y: number };
+  setPostion: (x: number, y: number) => void;
+}
+
+export const useIdiomsAnimateStore = create<IdiomsAnimateStore>((set) => ({
+  postion: { x: 0, y: 0 },
+  setPostion: (x: number, y: number) => set({ postion: { x, y } }),
 }));

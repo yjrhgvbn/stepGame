@@ -52,6 +52,9 @@ export function generateGrid(size: number, steps: number, minStep: number = 1, m
 
 export function loopStartPoint<T extends Point>(startPoint: T, fn: (p: T, index: number) => Partial<T> | void) {
   let cur: T | null = startPoint;
+  while (cur.prev) {
+    cur = cur.prev as T;
+  }
   let index = 0;
   while (cur) {
     const extendData = fn(cur, index);
