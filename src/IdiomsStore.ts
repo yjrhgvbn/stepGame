@@ -1,4 +1,4 @@
-import idioms from '../assets/idiom/four.json';
+import idioms from '../assets/Idiom/four.json';
 import { getGenerateKey } from './utils';
 import { produce } from 'immer';
 import { create } from 'zustand';
