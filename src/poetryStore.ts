@@ -1,4 +1,3 @@
-import tangPoertyList from '../assets/poetry/tang.json';
 import { getGenerateKey } from './utils';
 import { immerable, produce } from 'immer';
 import { countBy, maxBy, sample } from 'lodash';
