@@ -41,6 +41,7 @@ interface IdiomsStore {
   completeIdioms: Idiom[];
   randomIdioms: (size: number) => Idiom[];
   changeSelect: (id: string, isSeletd?: boolean) => { isComplete: boolean };
+  clearSelect: () => void;
 }
 
 export const useIdiomsStore = create<IdiomsStore>((set) => ({
@@ -73,6 +74,17 @@ export const useIdiomsStore = create<IdiomsStore>((set) => ({
       }),
     );
     return res;
+  },
+  clearSelect() {
+    set(
+      produce((state: IdiomsStore) => {
+        state.idioms.forEach((idiom) => {
+          idiom.words.forEach((word) => {
+            word.isSeletd = false;
+          });
+        });
+      }),
+    );
   },
 }));
 

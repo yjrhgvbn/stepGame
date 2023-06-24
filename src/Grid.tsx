@@ -1,12 +1,13 @@
-import { Card, CardContent } from '../components/ui/card';
-import { useIdiomsAnimateStore, useIdiomsStore } from './IdiomsStore';
+import { Button } from '../components/ui/button';
+import { Card } from '../components/ui/card';
+import { useIdiomsStore } from './IdiomsStore';
 import { clearAnimateStore, useAnimateStart } from './animate';
 import { type Point, extendGrid, generateGrid, loopStartPoint, pickIdiomStartPoints } from './generateGrid';
 import { usePoetryStore } from './poetryStore';
 import { randomChinese } from './utils';
-import { animated, useSpring } from '@react-spring/web';
 import classNames from 'classnames';
-import { clamp } from 'lodash';
+import { clamp, remove } from 'lodash';
+import { Eraser, RotateCw } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import type React from 'react';
 
@@ -29,14 +30,27 @@ type PoetryPoint = {
 export function Grid() {
   const [grid, setGrid] = useState<PoetryPoint[][]>([]);
   const [selectedPoints, setSelectedPoints] = useState<PoetryPoint[]>([]);
-  const anserLine = usePoetryStore((state) => state.anserLine);
+  // const anserLine = usePoetryStore((state) => state.anserLine);
 
-  const selectPoetry = usePoetryStore((state) => state.changeSelect);
+  const resetPoetry = usePoetryStore((state) => state.resetPoetry);
   const randomIdioms = useIdiomsStore((state) => state.randomIdioms);
+  const clearPoetrySelect = usePoetryStore((state) => state.clearSelect);
+  const clearIdiomSelect = useIdiomsStore((state) => state.clearSelect);
+  const changePoetrySelect = usePoetryStore((state) => state.changeSelect);
   const changeIdiomSelect = useIdiomsStore((state) => state.changeSelect);
+
+  const handleRsest = () => {
+    clearPoetrySelect();
+    clearIdiomSelect();
+    setSelectedPoints([]);
+    grid.forEach((row) => row.forEach((point) => (point.isSeleted = false)));
+    setGrid([...grid]);
+  };
 
   const handleGenerate = () => {
     clearAnimateStore();
+    handleRsest();
+    const anserLine = resetPoetry();
     const anserLen = anserLine.characters.length - 2;
     const gridLen = clamp(Math.ceil(anserLen) + 2, 4, 10);
     const grid = generateGrid(gridLen, anserLen);
@@ -76,31 +90,27 @@ export function Grid() {
     let isComplete = false;
     // TODO 不完全符合不算完成
     if (point.resType === ResType.Poetry) {
-      isComplete = selectPoetry(point.resId, isSeletd).isComplete;
+      isComplete = changePoetrySelect(point.resId, isSeletd).isComplete;
     } else if (point.resType === ResType.Idiom) {
       isComplete = changeIdiomSelect(point.resId, isSeletd).isComplete;
     }
     point.isSeleted = isSeletd;
     if (isComplete) {
       loopStartPoint(point, (p) => {
+        remove(selectedPoints, (item) => item.resId === p.resId);
         p.isComplete = true;
       });
-      setSelectedPoints([]);
     } else {
-      const index = selectedPoints.findIndex((item) => item === point);
-      if (index !== -1) {
-        selectedPoints.splice(index, 1);
-      }
+      remove(selectedPoints, (item) => item.resId === point.resId);
       if (isSeletd) selectedPoints.push(point);
-      setSelectedPoints([...selectedPoints]);
     }
+    setSelectedPoints([...selectedPoints]);
     setGrid([...grid]);
   };
 
   return (
-    <div>
-      <button onClick={handleGenerate}>刷新</button>
-      <div className={classNames('flex justify-center')}>
+    <div className={classNames('mt-4')}>
+      <div className={classNames('flex flex-wrap justify-center')}>
         <Card className="inline-block p-2">
           {grid.map((row, i) => (
             <div key={i} className="flex">
@@ -118,6 +128,18 @@ export function Grid() {
             </div>
           ))}
         </Card>
+      </div>
+      <div className={classNames('fixed bottom-3 left-1/2 -translate-x-1/2 ')}>
+        <div>
+          <Button variant="default" onClick={handleGenerate} className="h-12 text-lg">
+            <RotateCw className="mr-2 h-6 w-6" />
+            换一个
+          </Button>
+          <Button variant="default" onClick={handleRsest} className={classNames('ml-2 h-12 text-lg')} disabled={!selectedPoints.length}>
+            <Eraser className="mr-2 h-6 w-6" />
+            重置
+          </Button>
+        </div>
       </div>
     </div>
   );

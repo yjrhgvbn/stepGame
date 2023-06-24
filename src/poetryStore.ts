@@ -49,12 +49,12 @@ const CHINESE_ERG =
  */
 export function randomPoetry(): Poerty {
   const { getKey } = getGenerateKey('$poetry_');
-  const initPoerty = sample(tangPoertyList) || tangPoertyList[0];
-  // const initPoerty = {
-  //   author: '杜甫',
-  //   title: '月夜忆舍弟',
-  //   paragraphs: ['戍鼓断人行，边秋一雁声。', '露从今夜白，月是故乡明。', '有弟皆分散，无家问死生。', '寄书长不达，况乃未休兵。'],
-  // };
+  // const initPoerty = sample(tangPoertyList) || tangPoertyList[0];
+  const initPoerty = {
+    author: '杜甫',
+    title: '月夜忆舍弟',
+    paragraphs: ['戍鼓断人行，边秋一雁声。', '露从今夜白，月是故乡明。', '有弟皆分散，无家问死生。', '寄书长不达，况乃未休兵。'],
+  };
   const { author, paragraphs, title } = initPoerty;
   const lines: PoertyLine[] = [];
   paragraphs.forEach((paragraph, index) => {
@@ -99,12 +99,17 @@ function pickAnserLine(lines: PoertyLine[]): PoertyLine {
 const initSate = randomPoetry();
 
 type PoertyStore = {
-  resetPoetry: () => void;
+  resetPoetry: () => PoertyLine;
   changeSelect: (key: string, isSelected?: boolean) => { isComplete: boolean };
+  clearSelect: () => void;
 } & Poerty;
 export const usePoetryStore = create<PoertyStore>((set, get) => ({
   ...initSate,
-  resetPoetry: () => set(randomPoetry()),
+  resetPoetry: () => {
+    const poetry = randomPoetry();
+    set(poetry);
+    return poetry.anserLine;
+  },
   changeSelect: (key, isSelected = true) => {
     let res = { isComplete: false };
     set(
@@ -125,6 +130,18 @@ export const usePoetryStore = create<PoertyStore>((set, get) => ({
       }),
     );
     return res;
+  },
+  clearSelect() {
+    set(
+      produce((state: PoertyStore) => {
+        state.lines.forEach((line) => {
+          line.characters.forEach((c) => {
+            c.isSeleted = false;
+          });
+        });
+        return state;
+      }),
+    );
   },
 }));
 // usePoetryStore((state) => state.poetry);
