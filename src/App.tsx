@@ -5,7 +5,7 @@ import classNames from 'classnames';
 
 export default function App() {
   return (
-    <div className={classNames('mb-20')}>
+    <div className={classNames('my-10')}>
       <Poetry />
       <Grid />
       <Idioms />

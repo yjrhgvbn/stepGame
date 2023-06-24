@@ -31,14 +31,14 @@ export function Grid() {
   const [selectedPoints, setSelectedPoints] = useState<PoetryPoint[]>([]);
   const anserLine = usePoetryStore((state) => state.anserLine);
 
-  const updatePoetry = usePoetryStore((state) => state.updatePoetry);
+  const selectPoetry = usePoetryStore((state) => state.changeSelect);
   const randomIdioms = useIdiomsStore((state) => state.randomIdioms);
   const changeIdiomSelect = useIdiomsStore((state) => state.changeSelect);
 
   const handleGenerate = () => {
     clearAnimateStore();
     const anserLen = anserLine.characters.length - 2;
-    const gridLen = clamp(Math.ceil(anserLen * 1.5), 4, 10);
+    const gridLen = clamp(Math.ceil(anserLen) + 2, 4, 10);
     const grid = generateGrid(gridLen, anserLen);
     const poetryGrid = extendGrid<PoetryPoint>(grid, () => ({ resIndex: 0, resId: '', resType: null, isComplete: false, isSeleted: false })).map(
       (row) => {
@@ -73,13 +73,15 @@ export function Grid() {
 
   const handleClick = (i: number, j: number, isSeletd = true) => {
     const point = grid[i][j];
+    let isComplete = false;
+    // TODO 不完全符合不算完成
     if (point.resType === ResType.Poetry) {
-      updatePoetry(point.resId);
+      isComplete = selectPoetry(point.resId, isSeletd).isComplete;
+    } else if (point.resType === ResType.Idiom) {
+      isComplete = changeIdiomSelect(point.resId, isSeletd).isComplete;
     }
     point.isSeleted = isSeletd;
-    // TODO 不完全符合不算完成
-    const res = changeIdiomSelect(point.resId, isSeletd);
-    if (res.isComplete) {
+    if (isComplete) {
       loopStartPoint(point, (p) => {
         p.isComplete = true;
       });

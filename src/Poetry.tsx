@@ -1,4 +1,9 @@
-import { PoertyLine, usePoetryStore } from './poetryStore';
+import { Card } from '../components/ui/card';
+import { useAnimateEnd } from './animate';
+import { PoertyCharacter, PoertyLine, usePoetryStore } from './poetryStore';
+import { animated } from '@react-spring/web';
+import classNames from 'classnames';
+import { useRef } from 'react';
 
 export default function App() {
   const author = usePoetryStore((state) => state.author);
@@ -15,23 +20,44 @@ export default function App() {
     return acc;
   }, []);
   return (
-    <div className="mx-auto my-8 mt-10 w-8/12 rounded border border-gray-200 p-4 shadow-md dark:border-neutral-600 dark:bg-neutral-800 dark:shadow-none">
-      <div>{author}</div>
-      <div>{title}</div>
-      {fullLines.map((shortLines, i) => (
-        <div key={i} className="flex flex-wrap">
-          {shortLines.map((line, j) => (
-            <div key={j}>
-              {line.characters.map((character, k) => (
-                <span key={k} className={`h-8 w-8 border border-gray-200 dark:border-neutral-600 ${!character.isShow ? 'opacity-0' : ''}`}>
-                  {character.text}
-                </span>
-              ))}
-              {line.punctuation}
-            </div>
-          ))}
-        </div>
-      ))}
+    <div className={classNames('flex justify-center')}>
+      <Card className="inline-block p-4">
+        <div className={classNames('text-2xl')}>{title}</div>
+        <div className={classNames('text-sm text-gray-500')}>{author}</div>
+        {fullLines.map((shortLines, i) => (
+          <div key={i} className="flex flex-wrap">
+            {shortLines.map((line, j) => (
+              <div key={j} className={classNames('z-20 flex')}>
+                {line.characters.map((character) => {
+                  return !character.isAnser ? (
+                    <div key={character.key} className={`w-6 text-xl`}>
+                      {character.text}
+                    </div>
+                  ) : (
+                    <PoetryChar key={character.key} word={character} isComplete={character.isComplete}>
+                      {character.text}
+                    </PoetryChar>
+                  );
+                })}
+                {line.punctuation}
+              </div>
+            ))}
+          </div>
+        ))}
+      </Card>
     </div>
   );
 }
+const PoetryChar = (props: { children: React.ReactNode; word: PoertyCharacter; isComplete: boolean }) => {
+  const { word, isComplete } = props;
+  const idiomRef = useRef(null);
+  const springs = useAnimateEnd(word.key, idiomRef, isComplete, { fontSize: '1.25rem', width: '1.5rem', height: '1.75rem' });
+
+  return (
+    <div ref={idiomRef} className={classNames('h-6 w-6')}>
+      <animated.div id={word.key} className=" flex h-6 w-6 items-center justify-center text-4xl" style={springs}>
+        {isComplete ? props.children : '_'}
+      </animated.div>
+    </div>
+  );
+};

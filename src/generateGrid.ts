@@ -40,7 +40,7 @@ export class Point {
 /**
  * 生成网格，确保最小步数为指定步数
  */
-export function generateGrid(size: number, steps: number, minStep: number = 1, maxStep: number = 4) {
+export function generateGrid(size: number, steps: number, minStep: number = 1, maxStep: number = 3) {
   let { grid, randownSteps } = tryGenerateGrid(size, steps, minStep, maxStep);
   // while (!randownSteps || !isMinStep(grid!, randownSteps.startPoint, randownSteps.endPoint, 4)) {
   //   ({ grid, randownSteps } = tryGenerateGrid(size, steps, minStep, maxStep));

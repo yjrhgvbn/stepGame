@@ -14,12 +14,16 @@ export interface Poerty {
 export class PoertyCharacter {
   [immerable] = true;
   text: string;
-  isShow: boolean;
+  isAnser: boolean;
+  isComplete: boolean;
+  isSeleted: boolean;
   key: string;
   constructor(key: string, text: string) {
     this.text = text;
-    this.isShow = true;
+    this.isAnser = false;
+    this.isComplete = false;
     this.key = key;
+    this.isSeleted = false;
   }
 }
 
@@ -86,7 +90,7 @@ function pickAnserLine(lines: PoertyLine[]): PoertyLine {
   const anserLine = sample(filterLines) || filterLines[0] || lines[0];
   if (anserLine) {
     anserLine.characters.forEach((character) => {
-      character.isShow = false;
+      character.isAnser = true;
     });
   }
   return anserLine;
@@ -96,25 +100,31 @@ const initSate = randomPoetry();
 
 type PoertyStore = {
   resetPoetry: () => void;
-  updatePoetry: (key: string) => void;
+  changeSelect: (key: string, isSelected?: boolean) => { isComplete: boolean };
 } & Poerty;
 export const usePoetryStore = create<PoertyStore>((set, get) => ({
   ...initSate,
   resetPoetry: () => set(randomPoetry()),
-  updatePoetry: (key) => {
+  changeSelect: (key, isSelected = true) => {
+    let res = { isComplete: false };
     set(
       produce((state: PoertyStore) => {
         const line = state.lines.find((line) => line.key === state.anserLine.key);
         if (line) {
           const tCharacter = line.characters.find((c) => c.key === key);
           if (tCharacter) {
-            tCharacter.isShow = true;
+            tCharacter.isSeleted = isSelected;
+            if (line.characters.every((c) => c.isSeleted)) {
+              line.characters.forEach((c) => (c.isComplete = true));
+              res = { isComplete: true };
+            }
           }
         }
         return state;
         // state.author = '123';
       }),
     );
+    return res;
   },
 }));
 // usePoetryStore((state) => state.poetry);

@@ -48,12 +48,20 @@ export const useAnimateStart = (key: string, ref: React.RefObject<any>, deps?: R
   }, deps);
 };
 
-export const useAnimateEnd = (key: string, ref: React.RefObject<any>, canSatart: boolean) => {
+export interface EndStyle {
+  x?: number;
+  y?: number;
+  fontSize?: string;
+  width?: string;
+  height?: string;
+}
+
+export const useAnimateEnd = (key: string, ref: React.RefObject<any>, canSatart: boolean, endStyle: EndStyle) => {
   const animatePostion = useAnimateStore(key)((state) => state.postion);
 
   // TODO:处理元素缩放的情况
   const [springs, api] = useSpring(() => ({
-    from: { x: 0, y: 0, fontSize: '2.25rem', width: '2.5rem', height: '3rem' },
+    from: { x: 0, y: 0, ...endStyle },
   }));
   useEffect(() => {
     if (!ref.current || !canSatart) return;
@@ -66,15 +74,9 @@ export const useAnimateEnd = (key: string, ref: React.RefObject<any>, canSatart:
         y: yDistance,
         fontSize: '3rem',
         width: '3rem',
-        // width: '5rem',
+        height: '3rem',
       },
-      to: {
-        x: 0,
-        y: 0,
-        fontSize: '2.25rem',
-        width: '2.5rem',
-        // height: '2rem',
-      },
+      to: { x: 0, y: 0, ...endStyle },
     });
   }, [animatePostion]);
   return springs;
