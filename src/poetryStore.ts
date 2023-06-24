@@ -1,3 +1,4 @@
+import tangPoertyList from '../assets/poetry/tang.json';
 import { getGenerateKey } from './utils';
 import { immerable, produce } from 'immer';
 import { countBy, maxBy, sample } from 'lodash';
@@ -48,12 +49,12 @@ const CHINESE_ERG =
  */
 export function randomPoetry(): Poerty {
   const { getKey } = getGenerateKey('$poetry_');
-  // const initPoerty = sample(tangPoertyList) || tangPoertyList[0];
-  const initPoerty = {
-    author: '杜甫',
-    title: '月夜忆舍弟',
-    paragraphs: ['戍鼓断人行，边秋一雁声。', '露从今夜白，月是故乡明。', '有弟皆分散，无家问死生。', '寄书长不达，况乃未休兵。'],
-  };
+  const initPoerty = sample(tangPoertyList) || tangPoertyList[0];
+  // const initPoerty = {
+  //   author: '杜甫',
+  //   title: '月夜忆舍弟',
+  //   paragraphs: ['戍鼓断人行，边秋一雁声。', '露从今夜白，月是故乡明。', '有弟皆分散，无家问死生。', '寄书长不达，况乃未休兵。'],
+  // };
   const { author, paragraphs, title } = initPoerty;
   const lines: PoertyLine[] = [];
   paragraphs.forEach((paragraph, index) => {
