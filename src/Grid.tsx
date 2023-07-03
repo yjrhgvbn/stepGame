@@ -25,6 +25,7 @@ type PoetryPoint = {
   isSeleted: boolean;
   next: PoetryPoint | null;
   prev: PoetryPoint | null;
+  text: string;
 } & Point;
 
 export function Grid() {
@@ -54,19 +55,24 @@ export function Grid() {
     const anserLen = anserLine.characters.length - 2;
     const gridLen = clamp(Math.ceil(anserLen) + 2, 4, 10);
     const grid = generateGrid(gridLen, anserLen);
-    const poetryGrid = extendGrid<PoetryPoint>(grid, () => ({ resIndex: 0, resId: '', resType: null, isComplete: false, isSeleted: false })).map(
-      (row) => {
-        if (!row[0].prev && row[0].isPath) {
-          loopStartPoint(row[0], (_, i) => ({
-            resIndex: i,
-            resId: anserLine.characters[i].key,
-            resType: ResType.Poetry,
-            text: anserLine.characters[i].text,
-          }));
-        }
-        return row;
-      },
-    );
+    const poetryGrid = extendGrid<PoetryPoint>(grid, () => ({
+      resIndex: 0,
+      resId: '',
+      resType: null,
+      isComplete: false,
+      isSeleted: false,
+      text: '',
+    })).map((row) => {
+      if (!row[0].prev && row[0].isInStepPath) {
+        loopStartPoint(row[0], (_, i) => ({
+          resIndex: i,
+          resId: anserLine.characters[i].key,
+          resType: ResType.Poetry,
+          text: anserLine.characters[i].text,
+        }));
+      }
+      return row;
+    });
     const [startPoints, resStartPoints] = pickIdiomStartPoints(poetryGrid);
     const idioms = randomIdioms(startPoints.length);
     startPoints.forEach((point, i) =>

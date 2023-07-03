@@ -14,10 +14,14 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2017",
-    "types": ["vite/client"]
+    "types": ["vite/client"],
+    "baseUrl": ".",
+    "paths": {
+      "/*": ["./*"]
+    }
   },
   "exclude": ["node_modules"],
-  "include": ["**/*.ts", "**/*.tsx"],
+  "include": ["./**/*.ts", "./**/*.tsx"],
   "ts-node": {
     "transpileOnly": true,
     "transpiler": "ts-node/transpilers/swc",
