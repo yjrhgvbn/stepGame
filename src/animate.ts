@@ -5,9 +5,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useUpdateEffect } from 'react-use';
 import { StoreApi, UseBoundStore, create } from 'zustand';
 
+interface StyleInfo {
+  x: number;
+  y: number;
+  fontSize: string;
+}
+
 interface AnimateStore {
-  postion: { x: number; y: number };
-  setPostion: (x: number, y: number) => void;
+  style: StyleInfo;
+  setStyle: (params: StyleInfo) => void;
   clear: () => void;
 }
 
@@ -18,9 +24,9 @@ export const useAnimateStore = (id: string) => {
     animateMap.set(
       id,
       create<AnimateStore>((set) => ({
-        postion: { x: 0, y: 0 },
-        setPostion: (x: number, y: number) => set({ postion: { x, y } }),
-        clear: () => set({ postion: { x: 0, y: 0 } }),
+        style: { x: 0, y: 0, fontSize: '3rem' },
+        setStyle: (state) => set({ style: state }),
+        clear: () => set({ style: { x: 0, y: 0, fontSize: '3rem' } }),
       })),
     );
   }
@@ -40,11 +46,12 @@ export const clearAnimateStore = (id?: string) => {
 };
 
 export const useAnimateStart = (key: string, ref: React.RefObject<any>, deps?: React.DependencyList) => {
-  const setPostion = useAnimateStore(key)((state) => state.setPostion);
+  const setStyle = useAnimateStore(key)((state) => state.setStyle);
   useEffect(() => {
     if (!ref.current) return;
+    const font = window.getComputedStyle(ref.current).fontSize;
     const { x, y } = ref.current.getBoundingClientRect();
-    setPostion(x + document.documentElement.scrollLeft, y + document.documentElement.scrollTop);
+    setStyle({ x: x + document.documentElement.scrollLeft, y: y + document.documentElement.scrollTop, fontSize: font });
   }, deps);
 };
 
@@ -57,28 +64,26 @@ export interface EndStyle {
 }
 
 export const useAnimateEnd = (key: string, ref: React.RefObject<any>, canSatart: boolean, endStyle: EndStyle) => {
-  const animatePostion = useAnimateStore(key)((state) => state.postion);
+  const animateStyle = useAnimateStore(key)((state) => state.style);
 
-  // TODO:处理元素缩放的情况
   const [springs, api] = useSpring(() => ({
     from: { x: 0, y: 0, ...endStyle },
   }));
   useEffect(() => {
     if (!ref.current || !canSatart) return;
+    const font = window.getComputedStyle(ref.current).fontSize;
     const { x, y } = ref.current.getBoundingClientRect();
-    const xDistance = animatePostion.x - (x + document.documentElement.scrollLeft);
-    const yDistance = animatePostion.y - (y + document.documentElement.scrollTop);
+    const xDistance = animateStyle.x - (x + document.documentElement.scrollLeft);
+    const yDistance = animateStyle.y - (y + document.documentElement.scrollTop);
     api.start({
       from: {
         x: xDistance,
         y: yDistance,
-        fontSize: '3rem',
-        width: '3rem',
-        height: '3rem',
+        fontSize: animateStyle.fontSize,
       },
-      to: { x: 0, y: 0, ...endStyle },
+      to: { x: 0, y: 0, fontSize: font, ...endStyle },
     });
-  }, [animatePostion]);
+  }, [animateStyle]);
   return springs;
 };
 

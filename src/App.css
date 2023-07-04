@@ -6,6 +6,7 @@
   :root {
     font-family: Georgia, Baskerville, 'Liberation Serif', 'Kaiti SC', STKaiti, 'AR PL UKai CN', 'AR PL UKai HK', 'AR PL UKai TW', 'AR PL UKai TW MBE',
       'AR PL KaitiM GB', KaiTi, KaiTi_GB2312, DFKai-SB, 'TW\-Kai', serif;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
 
@@ -76,5 +77,20 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+@layer base {
+  :root {
+    font-size: 75%; /* = 12px */
+  }
+  @screen md {
+    :root {
+      font-size: 87.5%; /* = 14px */
+    }
+  }
+  @screen xl {
+    :root {
+      font-size: 100%; /* = 16px */
+    }
   }
 }

@@ -51,11 +51,11 @@ export default function App() {
 const PoetryChar = (props: { children: React.ReactNode; word: PoertyCharacter; isComplete: boolean }) => {
   const { word, isComplete } = props;
   const idiomRef = useRef(null);
-  const springs = useAnimateEnd(word.key, idiomRef, isComplete, { fontSize: '1.25rem', width: '1.5rem', height: '1.75rem' });
+  const springs = useAnimateEnd(word.key, idiomRef, isComplete, { width: '1.5rem', height: '1.75rem' });
 
   return (
-    <div ref={idiomRef} className={classNames('h-6 w-6')}>
-      <animated.div id={word.key} className=" flex h-6 w-6 items-center justify-center text-4xl" style={springs}>
+    <div ref={idiomRef} className={classNames('h-6 w-6 text-xl')}>
+      <animated.div id={word.key} className="flex h-6 w-6 items-center justify-center" style={springs}>
         {isComplete ? props.children : '_'}
       </animated.div>
     </div>

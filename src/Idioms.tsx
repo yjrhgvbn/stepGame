@@ -33,10 +33,10 @@ export default function Idioms() {
 const IdomChar = (props: { children: React.ReactNode; word: IdiomWord; isComplete: boolean }) => {
   const { word, isComplete } = props;
   const idiomRef = useRef(null);
-  const springs = useAnimateEnd(word.key, idiomRef, isComplete, { fontSize: '2.25rem', width: '2.5rem', height: '2.5rem' });
+  const springs = useAnimateEnd(word.key, idiomRef, isComplete, { width: '2.5rem', height: '2.5rem' });
 
   return (
-    <div ref={idiomRef} className={classNames('h-10 w-10')}>
+    <div ref={idiomRef} className={classNames('h-10 w-10 text-4xl')}>
       <animated.div id={word.key} className="flex h-10 w-10 items-center justify-center text-4xl" style={springs}>
         {isComplete ? props.children : '_'}
       </animated.div>
