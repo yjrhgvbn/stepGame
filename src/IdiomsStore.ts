@@ -26,6 +26,7 @@ export function randomIdioms(length: number): Idiom[] {
       key: getKey(),
       isSeletd: false,
     }));
+    console.log('🚀 ~ file: IdiomsStore.ts:29 ~ words ~ idioms[index].word:', idioms[index].word);
     res.push({
       words,
       key: getKey(),

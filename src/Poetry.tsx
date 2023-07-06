@@ -5,7 +5,7 @@ import { animated } from '@react-spring/web';
 import classNames from 'classnames';
 import { useRef } from 'react';
 
-export default function App() {
+export default function Poetry() {
   const author = usePoetryStore((state) => state.author);
   const title = usePoetryStore((state) => state.title);
   const lines = usePoetryStore((state) => state.lines);
@@ -20,17 +20,17 @@ export default function App() {
     return acc;
   }, []);
   return (
-    <div className={classNames('flex justify-center')}>
-      <Card className="inline-block p-4">
+    <div className={classNames('')}>
+      <Card className="max-h-[60vh] max-w-full overflow-scroll p-4">
         <div className={classNames('text-2xl')}>{title}</div>
         <div className={classNames('text-sm text-gray-500')}>{author}</div>
         {fullLines.map((shortLines, i) => (
-          <div key={i} className="flex flex-wrap">
+          <div key={i} className="text-xl">
             {shortLines.map((line, j) => (
-              <div key={j} className={classNames('z-20 flex')}>
+              <div key={j} className={classNames('z-20 inline whitespace-nowrap')}>
                 {line.characters.map((character) => {
                   return !character.isAnser ? (
-                    <div key={character.key} className={`w-6 text-xl`}>
+                    <div key={character.key} className={`inline w-6 `}>
                       {character.text}
                     </div>
                   ) : (
@@ -51,11 +51,11 @@ export default function App() {
 const PoetryChar = (props: { children: React.ReactNode; word: PoertyCharacter; isComplete: boolean }) => {
   const { word, isComplete } = props;
   const idiomRef = useRef(null);
-  const springs = useAnimateEnd(word.key, idiomRef, isComplete, { width: '1.5rem', height: '1.75rem' });
+  const springs = useAnimateEnd(word.key, idiomRef, isComplete, { width: '1.25rem', height: '1.75rem' });
 
   return (
-    <div ref={idiomRef} className={classNames('h-6 w-6 text-xl')}>
-      <animated.div id={word.key} className="flex h-6 w-6 items-center justify-center" style={springs}>
+    <div ref={idiomRef} className={classNames('inline-block h-5 w-5')}>
+      <animated.div id={word.key} className="absolute z-50 " style={springs}>
         {isComplete ? props.children : '_'}
       </animated.div>
     </div>
