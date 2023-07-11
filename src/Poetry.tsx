@@ -1,9 +1,9 @@
 import { Card } from '../components/ui/card';
-import { useAnimateEnd } from './animate';
+import { startAnimate } from './animate';
 import { PoertyCharacter, PoertyLine, usePoetryStore } from './poetryStore';
 import { animated } from '@react-spring/web';
 import classNames from 'classnames';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function Poetry() {
   const author = usePoetryStore((state) => state.author);
@@ -51,13 +51,17 @@ export default function Poetry() {
 const PoetryChar = (props: { children: React.ReactNode; word: PoertyCharacter; isComplete: boolean }) => {
   const { word, isComplete } = props;
   const idiomRef = useRef(null);
-  const springs = useAnimateEnd(word.key, idiomRef, isComplete, { width: '1.25rem', height: '1.75rem' });
+  useEffect(() => {
+    if (isComplete) {
+      startAnimate(word.key, idiomRef);
+    }
+  }, [isComplete]);
 
   return (
     <div ref={idiomRef} className={classNames('inline-block h-5 w-5')}>
-      <animated.div id={word.key} className="absolute z-50 " style={springs}>
+      <div id={word.key} className="absolute z-50 ">
         {isComplete ? props.children : '_'}
-      </animated.div>
+      </div>
     </div>
   );
 };

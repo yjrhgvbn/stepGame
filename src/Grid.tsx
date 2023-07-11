@@ -1,7 +1,7 @@
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { useIdiomsStore } from './IdiomsStore';
-import { clearAnimateStore, useAnimateStart } from './animate';
+import { clearAnimate, setAnimateFrom } from './animate';
 import { type Point, extendGrid, generateGrid, loopStartPoint, pickIdiomStartPoints } from './generateGrid';
 import { usePoetryStore } from './poetryStore';
 import { randomChinese } from './utils';
@@ -50,7 +50,7 @@ export function Grid() {
   };
 
   const handleGenerate = () => {
-    clearAnimateStore();
+    clearAnimate();
     handleRsest();
     const anserLine = resetPoetry();
     const anserLen = anserLine.characters.length - 2;
@@ -188,7 +188,7 @@ const EffectPoint = (pros: PoetryPointProps) => {
   function handleDoubleClick(e: React.MouseEvent<HTMLButtonElement, MouseEvent>) {
     pros.onDoubleClick && pros.onDoubleClick(e);
   }
-  useAnimateStart(point.resId, pointRef, [isComplete, point, rowSize]);
+  setAnimateFrom(point.resId, pointRef);
 
   return (
     <div

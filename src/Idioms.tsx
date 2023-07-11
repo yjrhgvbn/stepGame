@@ -1,9 +1,8 @@
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { IdiomWord, useIdiomsStore } from './IdiomsStore';
-import { useAnimateEnd } from './animate';
-import { animated } from '@react-spring/web';
+import { startAnimate } from './animate';
 import classNames from 'classnames';
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function Idioms() {
   const idioms = useIdiomsStore((state) => state.idioms);
@@ -31,14 +30,18 @@ export default function Idioms() {
 
 const IdomChar = (props: { children: React.ReactNode; word: IdiomWord; isComplete: boolean }) => {
   const { word, isComplete } = props;
-  const idiomRef = useRef(null);
-  const springs = useAnimateEnd(word.key, idiomRef, isComplete, { width: '2.5rem', height: '2.5rem' });
+  const idiomRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isComplete) {
+      startAnimate(word.key, idiomRef);
+    }
+  }, [isComplete]);
 
   return (
-    <div ref={idiomRef} className={classNames('h-10 w-10 text-4xl')}>
-      <animated.div id={word.key} className=" z-50 flex h-10 w-10 items-center justify-center text-4xl" style={springs}>
-        {isComplete ? props.children : '_'}
-      </animated.div>
+    <div className={classNames('h-10 w-10 text-4xl')}>
+      <div id={word.key} className=" z-50 flex h-10 w-10 items-center justify-center text-4xl">
+        <span ref={idiomRef}> {isComplete ? props.children : '_'}</span>
+      </div>
     </div>
   );
 };
