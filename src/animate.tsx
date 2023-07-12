@@ -33,16 +33,16 @@ class ConvertAnimateClass {
     if (!this.fromMap.has(key) || this.toMap.has(key)) return this.toMap.get(key);
     const targetStyle = convertToStyle(target);
     const fromStyle = convertToStyle(this.fromMap.get(key)!);
-    const domr = createPortal(
+    const portal = createPortal(
       <AnimatePortal fromStyle={fromStyle} endStyle={targetStyle} id={key}>
         {target.current.innerText}
       </AnimatePortal>,
       this.wrapperDom,
       key,
     );
-    this.toMap.set(key, domr);
+    this.toMap.set(key, portal);
     useAnimateStore.getState().increaseConvertCount();
-    return domr;
+    return portal;
   };
 
   public endAnimate = (key: string) => {
@@ -130,3 +130,4 @@ export const ConvertAnimate = () => {
     </>
   );
 };
+export default ConvertAnimate;

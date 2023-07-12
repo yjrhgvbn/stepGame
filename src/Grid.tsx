@@ -1,14 +1,9 @@
-import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
-import { useIdiomsStore } from './IdiomsStore';
-import { clearAnimate, setAnimateFrom } from './animate';
-import { type Point, extendGrid, generateGrid, loopStartPoint, pickIdiomStartPoints } from './generateGrid';
-import { usePoetryStore } from './poetryStore';
-import { randomChinese } from './utils';
+import { setAnimateFrom } from './Animate';
+import { type Point } from './store/generateGrid';
+import { useGridStore } from './store/gridStore';
 import classNames from 'classnames';
-import { clamp, remove } from 'lodash';
-import { Eraser, RotateCw } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import type React from 'react';
 
 enum ResType {
@@ -22,99 +17,17 @@ type PoetryPoint = {
   resType: ResType | null;
   resIndex: number;
   isComplete: boolean;
-  isSeleted: boolean;
+  isSelected: boolean;
   next: PoetryPoint | null;
   prev: PoetryPoint | null;
   text: string;
 } & Point;
 
-export function Grid() {
-  const [rowSize, setRowSize] = useState(4);
-  const [grid, setGrid] = useState<PoetryPoint[][]>([]);
-  const [selectedPoints, setSelectedPoints] = useState<PoetryPoint[]>([]);
-  // const anserLine = usePoetryStore((state) => state.anserLine);
-
-  const resetPoetry = usePoetryStore((state) => state.resetPoetry);
-  const randomIdioms = useIdiomsStore((state) => state.randomIdioms);
-  const clearPoetrySelect = usePoetryStore((state) => state.clearSelect);
-  const clearIdiomSelect = useIdiomsStore((state) => state.clearSelect);
-  const changePoetrySelect = usePoetryStore((state) => state.changeSelect);
-  const changeIdiomSelect = useIdiomsStore((state) => state.changeSelect);
-
-  const handleRsest = () => {
-    clearPoetrySelect();
-    clearIdiomSelect();
-    setSelectedPoints([]);
-    grid.forEach((row) => row.forEach((point) => (point.isSeleted = false)));
-    setGrid([...grid]);
-  };
-
-  const handleGenerate = () => {
-    clearAnimate();
-    handleRsest();
-    const anserLine = resetPoetry();
-    const anserLen = anserLine.characters.length - 2;
-    const gridLen = clamp(Math.ceil(anserLen) + 2, 4, 10);
-    setRowSize(gridLen);
-    const grid = generateGrid(gridLen, anserLen);
-    const poetryGrid = extendGrid<PoetryPoint>(grid, () => ({
-      resIndex: 0,
-      resId: '',
-      resType: null,
-      isComplete: false,
-      isSeleted: false,
-      text: '',
-    })).map((row) => {
-      if (!row[0].prev && row[0].isInStepPath) {
-        loopStartPoint(row[0], (_, i) => ({
-          resIndex: i,
-          resId: anserLine.characters[i].key,
-          resType: ResType.Poetry,
-          text: anserLine.characters[i].text,
-        }));
-      }
-      return row;
-    });
-    const [startPoints, resStartPoints] = pickIdiomStartPoints(poetryGrid);
-    const idioms = randomIdioms(startPoints.length);
-    startPoints.forEach((point, i) =>
-      loopStartPoint(point, (_, j) => ({ resIndex: j, text: idioms[i].words[j].text, resType: ResType.Idiom, resId: idioms[i].words[j].key })),
-    );
-    resStartPoints.forEach((point) =>
-      loopStartPoint(point, (p, j) => {
-        if (p.resType) return;
-        return { resIndex: j, text: randomChinese(), resType: ResType.Random };
-      }),
-    );
-    setGrid(poetryGrid);
-  };
-
-  useEffect(() => {
-    handleGenerate();
-  }, []);
-
-  const handleClick = (i: number, j: number, isSeletd = true) => {
-    const point = grid[i][j];
-    let isComplete = false;
-    // TODO 不完全符合不算完成
-    if (point.resType === ResType.Poetry) {
-      isComplete = changePoetrySelect(point.resId, isSeletd).isComplete;
-    } else if (point.resType === ResType.Idiom) {
-      isComplete = changeIdiomSelect(point.resId, isSeletd).isComplete;
-    }
-    point.isSeleted = isSeletd;
-    if (isComplete) {
-      loopStartPoint(point, (p) => {
-        remove(selectedPoints, (item) => item.resId === p.resId);
-        p.isComplete = true;
-      });
-    } else {
-      remove(selectedPoints, (item) => item.resId === point.resId);
-      if (isSeletd) selectedPoints.push(point);
-    }
-    setSelectedPoints([...selectedPoints]);
-    setGrid([...grid]);
-  };
+export default function Grid() {
+  const rowSize = 4 as number;
+  const grid = useGridStore((state) => state.grid);
+  const selectedPoints = useGridStore((state) => state.selectedPoints);
+  const selectPoint = useGridStore((state) => state.changeSelect);
 
   return (
     <div className={classNames('mt-4')}>
@@ -135,8 +48,8 @@ export function Grid() {
               {row.map((cell, j) => (
                 <EffectPoint
                   point={cell}
-                  onClick={() => handleClick(i, j)}
-                  onDoubleClick={() => handleClick(i, j, false)}
+                  onClick={() => selectPoint(i, j)}
+                  onDoubleClick={() => selectPoint(i, j, false)}
                   key={j}
                   isFocus={selectedPoints.at(-1) === cell}
                   rowSize={rowSize}
@@ -147,18 +60,6 @@ export function Grid() {
             </div>
           ))}
         </Card>
-      </div>
-      <div className={classNames('fixed bottom-3 left-1/2 -translate-x-1/2 ')}>
-        <div>
-          <Button variant="default" onClick={handleGenerate} className="h-12 text-lg">
-            <RotateCw className="mr-2 h-6 w-6" />
-            换一个
-          </Button>
-          <Button variant="default" onClick={handleRsest} className={classNames('ml-2 h-12 text-lg')} disabled={!selectedPoints.length}>
-            <Eraser className="mr-2 h-6 w-6" />
-            重置
-          </Button>
-        </div>
       </div>
     </div>
   );
@@ -174,7 +75,7 @@ interface PoetryPointProps {
 }
 const EffectPoint = (pros: PoetryPointProps) => {
   const { onClick, children, isFocus, point, rowSize = 4 } = pros;
-  const { isComplete, isSeleted } = point;
+  const { isComplete, isSelected } = point;
   const [effect, setEffect] = useState(false);
   const pointRef = useRef<HTMLButtonElement>(null);
 
@@ -205,7 +106,7 @@ const EffectPoint = (pros: PoetryPointProps) => {
         className={classNames(
           'relative w-full cursor-pointer rounded-xl bg-amber-100 pb-[100%] text-center ',
           'transition-colors',
-          { 'bg-amber-200 ': !isComplete && isSeleted },
+          { 'bg-amber-200 ': !isComplete && isSelected },
           { 'animate-shake': !isComplete && !isFocus && effect },
           { 'animate-focus': !isComplete && isFocus },
           { 'bg-slate-200': isComplete },

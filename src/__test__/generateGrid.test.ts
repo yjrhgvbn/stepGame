@@ -1,4 +1,4 @@
-import { Point, generateGrid, getBoundWidthFn, pickIdiomStartPoints } from '../generateGrid';
+import { Point, generateGrid, getBoundWidthFn, pickIdiomStartPoints } from '../store/generateGrid';
 import { clamp } from 'lodash';
 import { expect, test } from 'vitest';
 

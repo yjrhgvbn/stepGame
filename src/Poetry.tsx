@@ -1,6 +1,6 @@
 import { Card } from '../components/ui/card';
-import { startAnimate } from './animate';
-import { PoertyCharacter, PoertyLine, usePoetryStore } from './poetryStore';
+import { startAnimate } from './Animate';
+import { PoetryCharacter, PoetryLine, usePoetryStore } from './store/poetryStore';
 import { animated } from '@react-spring/web';
 import classNames from 'classnames';
 import { useEffect, useRef } from 'react';
@@ -10,7 +10,7 @@ export default function Poetry() {
   const title = usePoetryStore((state) => state.title);
   const lines = usePoetryStore((state) => state.lines);
   // 根据行数生成数组
-  const fullLines = lines.reduce((acc: PoertyLine[][], line) => {
+  const fullLines = lines.reduce((acc: PoetryLine[][], line) => {
     const currentLine = acc.at(-1);
     if (currentLine?.at(-1)?.lineNum === line.lineNum) {
       currentLine.push(line);
@@ -29,12 +29,12 @@ export default function Poetry() {
             {shortLines.map((line, j) => (
               <div key={j} className={classNames('z-20 inline whitespace-nowrap')}>
                 {line.characters.map((character) => {
-                  return !character.isAnser ? (
+                  return !line.isAnswer ? (
                     <div key={character.key} className={`inline w-6 `}>
                       {character.text}
                     </div>
                   ) : (
-                    <PoetryChar key={character.key} word={character} isComplete={character.isComplete}>
+                    <PoetryChar key={character.key} word={character} isComplete={line.isComplete}>
                       {character.text}
                     </PoetryChar>
                   );
@@ -48,7 +48,7 @@ export default function Poetry() {
     </div>
   );
 }
-const PoetryChar = (props: { children: React.ReactNode; word: PoertyCharacter; isComplete: boolean }) => {
+const PoetryChar = (props: { children: React.ReactNode; word: PoetryCharacter; isComplete: boolean }) => {
   const { word, isComplete } = props;
   const idiomRef = useRef(null);
   useEffect(() => {

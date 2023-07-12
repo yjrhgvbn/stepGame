@@ -46,9 +46,6 @@ export class Point {
  */
 export function generateGrid(size: number, steps: number, minStep: number = 1, maxStep: number = 3) {
   let { grid, stepPoint } = tryGenerateGrid(size, size, steps, minStep, maxStep);
-  // while (!randownSteps || !isMinStep(grid!, randownSteps.startPoint, randownSteps.endPoint, 4)) {
-  //   ({ grid, randownSteps } = tryGenerateGrid(size, steps, minStep, maxStep));
-  // }
   if (!stepPoint || !grid) throw new Error('生成网格失败');
   return grid;
 }
@@ -93,9 +90,9 @@ export function pickIdiomStartPoints<T extends Point>(grid: T[][], minLeftPointS
     });
   });
   const startPoints: T[] = [];
-  const quene: T[] = allStartPoints;
-  while (quene.length) {
-    const first = quene.shift()!;
+  const queue: T[] = allStartPoints;
+  while (queue.length) {
+    const first = queue.shift()!;
     first.setHead();
     let cur: T | null = first;
     for (let i = 0; i < 3; i++) {
@@ -104,7 +101,7 @@ export function pickIdiomStartPoints<T extends Point>(grid: T[][], minLeftPointS
     }
     if (cur) {
       startPoints.push(first);
-      if (cur.next) quene.push(cur.next as T);
+      if (cur.next) queue.push(cur.next as T);
       cur.setTail();
     }
   }
@@ -127,9 +124,9 @@ export function pickIdiomStartPoints<T extends Point>(grid: T[][], minLeftPointS
  */
 function tryGenerateGrid(rowLen: number, colLen: number, steps: number, minStep: number = 1, maxStep: number = 4) {
   const initGrid: number[][] = new Array(rowLen).fill(-1).map(() => new Array(colLen).fill(-1));
-  const randownSteps = generateRandownSteps(rowLen, colLen, steps, minStep, maxStep);
-  if (!randownSteps) throw new Error('生成随机步骤失败');
-  const [grid, stepPoint] = initLinkGridAndSteps(initGrid, randownSteps.startPoint, randownSteps.moveList, minStep, maxStep);
+  const randomSteps = generateRandomSteps(rowLen, colLen, steps, minStep, maxStep);
+  if (!randomSteps) throw new Error('生成随机步骤失败');
+  const [grid, stepPoint] = initLinkGridAndSteps(initGrid, randomSteps.startPoint, randomSteps.moveList, minStep, maxStep);
   const resGrid = fillGridLinkWithLen(grid, steps, 4, minStep, maxStep);
   return {
     grid: resGrid,
@@ -181,7 +178,7 @@ function fillGridLinkWithLen(grid: Point[][], steps: number, len = 4, minStep = 
   let curLinkCount = 0;
   for (let i = 0; i < rowLen * colLen - steps - 2; ) {
     if (!prePoint || curLinkCount >= len) {
-      const newCoordinate = pickUnmarkPoint();
+      const newCoordinate = pickUnmarkedPoint();
 
       if (!newCoordinate) throw new Error('生成网格失败');
       prePoint = grid[newCoordinate[0]][newCoordinate[1]];
@@ -189,7 +186,7 @@ function fillGridLinkWithLen(grid: Point[][], steps: number, len = 4, minStep = 
       preCoordinate = newCoordinate;
       curLinkCount = 1;
     } else {
-      const newCoordinate = pickUnmarkSidePoint(preCoordinate![0], preCoordinate![1]);
+      const newCoordinate = pickUnmarkedSidePoint(preCoordinate![0], preCoordinate![1]);
       if (!newCoordinate) {
         prePoint = null;
         curLinkCount = 0;
@@ -206,7 +203,7 @@ function fillGridLinkWithLen(grid: Point[][], steps: number, len = 4, minStep = 
     i++;
   }
   return grid;
-  function pickUnmarkSidePoint(x: number, y: number) {
+  function pickUnmarkedSidePoint(x: number, y: number) {
     const dir = [
       [-1, 0],
       [1, 0],
@@ -225,7 +222,7 @@ function fillGridLinkWithLen(grid: Point[][], steps: number, len = 4, minStep = 
     }
     return sample(queue);
   }
-  function pickUnmarkPoint() {
+  function pickUnmarkedPoint() {
     const queue: number[][] = [];
     for (let i = 0; i < rowLen; i++) {
       for (let j = 0; j < colLen; j++) {
@@ -245,7 +242,7 @@ type MoveStep = Omit<MoveStepPoint, 'toPoint' | 'fromPoint'>;
  * @param minStep  最小步长
  * @param maxStep  最大步长
  */
-function generateRandownSteps(
+function generateRandomSteps(
   rowLen: number,
   colLen: number,
   steps: number,
@@ -308,7 +305,7 @@ function generateRandownSteps(
   }
   // 在默认的移动步骤上，大约80%的情况不需要递归
   if (endPoint[1] !== mexColIndex || hasBackStep(moveList) || !isCorrectSteps(moveList, maxRowIndex)) {
-    return generateRandownSteps(rowLen, colLen, steps, minStep, maxStep);
+    return generateRandomSteps(rowLen, colLen, steps, minStep, maxStep);
   }
   return {
     startPoint,
@@ -383,13 +380,13 @@ function trySmallStepMove(moveList: MoveStep[], targetPoint: number[], columns: 
  * @param preDir  上一方向
  * @returns
  */
-function hasBackStep(setpList: { step: number; dir: string }[]) {
-  if (setpList.length < 2) return false;
+function hasBackStep(stepList: { step: number; dir: string }[]) {
+  if (stepList.length < 2) return false;
   let x = 0;
   let y = 0;
   const pathRecord: string[] = [`${x},${y}`];
-  for (let i = 0; i < setpList.length; i++) {
-    const { dir: curDir, step: curStep } = setpList[i];
+  for (let i = 0; i < stepList.length; i++) {
+    const { dir: curDir, step: curStep } = stepList[i];
     if (curDir === 'l') x -= curStep;
     if (curDir === 'r') x += curStep;
     if (curDir === 't') y -= curStep;
@@ -403,10 +400,10 @@ function hasBackStep(setpList: { step: number; dir: string }[]) {
 /**
  *  判断步骤是否正确
  */
-function isCorrectSteps(setpList: { step: number; dir: string }[], rowSize: number) {
+function isCorrectSteps(stepList: { step: number; dir: string }[], rowSize: number) {
   let sum = 0;
-  for (let i = 0; i < setpList.length; i++) {
-    const { step, dir } = setpList[i];
+  for (let i = 0; i < stepList.length; i++) {
+    const { step, dir } = stepList[i];
     if (dir === 'l') {
       sum -= step;
     } else if (dir === 'r') {
@@ -419,11 +416,11 @@ function isCorrectSteps(setpList: { step: number; dir: string }[], rowSize: numb
 
 // 在指定范围内获取最大宽度
 export function getBoundWidthFn(length: number, minStep: number = 2, maxStep: number = 4) {
-  return function (postion: number) {
-    const leftMin = postion < minStep ? 0 : minStep;
-    const leftMax = postion < maxStep ? (leftMin == 0 ? 0 : postion) : maxStep;
-    const rightMin = length - postion >= minStep ? minStep : 0;
-    const rightMax = length - postion >= maxStep ? maxStep : rightMin === 0 ? 0 : length - postion;
+  return function (position: number) {
+    const leftMin = position < minStep ? 0 : minStep;
+    const leftMax = position < maxStep ? (leftMin == 0 ? 0 : position) : maxStep;
+    const rightMin = length - position >= minStep ? minStep : 0;
+    const rightMax = length - position >= maxStep ? maxStep : rightMin === 0 ? 0 : length - position;
     return [leftMax, leftMin, rightMin, rightMax];
   };
 }
