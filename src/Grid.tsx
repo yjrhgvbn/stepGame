@@ -1,5 +1,6 @@
 import { Card } from '../components/ui/card';
 import { setAnimateFrom } from './Animate';
+import useConfigStore from './store/configStore';
 import { type Point } from './store/generateGrid';
 import { useGridStore } from './store/gridStore';
 import classNames from 'classnames';
@@ -24,7 +25,7 @@ type PoetryPoint = {
 } & Point;
 
 export default function Grid() {
-  const rowSize = 4 as number;
+  const rowSize = useConfigStore((state) => state.gridLen);
   const grid = useGridStore((state) => state.grid);
   const selectedPoints = useGridStore((state) => state.selectedPoints);
   const selectPoint = useGridStore((state) => state.changeSelect);

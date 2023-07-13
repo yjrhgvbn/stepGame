@@ -1,7 +1,6 @@
 import { Card } from '../components/ui/card';
 import { startAnimate } from './Animate';
 import { PoetryCharacter, PoetryLine, usePoetryStore } from './store/poetryStore';
-import { animated } from '@react-spring/web';
 import classNames from 'classnames';
 import { useEffect, useRef } from 'react';
 
@@ -58,8 +57,8 @@ const PoetryChar = (props: { children: React.ReactNode; word: PoetryCharacter; i
   }, [isComplete]);
 
   return (
-    <div ref={idiomRef} className={classNames('inline-block h-5 w-5')}>
-      <div id={word.key} className="absolute z-50 ">
+    <div className={classNames('inline-block h-5 w-5 text-amber-500')}>
+      <div ref={idiomRef} id={word.key} className="absolute z-50 ">
         {isComplete ? props.children : '_'}
       </div>
     </div>

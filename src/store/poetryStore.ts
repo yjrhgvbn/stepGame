@@ -1,10 +1,11 @@
-import tangPoetryList from '../../assets/poetry/tang.json';
 import { getGenerateKey } from '../utils';
+import { randomPoetryBySize } from './configStore';
 import { immerable, produce } from 'immer';
-import { countBy, maxBy, sample, xorBy } from 'lodash';
+import { sample, xorBy } from 'lodash';
 import { create } from 'zustand';
 
 export interface Poetry {
+  id: number;
   author: string;
   title: string;
   lines: PoetryLine[];
@@ -47,7 +48,9 @@ const CHINESE_ERG =
  */
 export function randomPoetry(): Poetry {
   const { getKey } = getGenerateKey('$poetry_');
-  const initPoetry = sample(tangPoetryList) || tangPoetryList[0];
+  const initPoetry = randomPoetryBySize();
+  if (!initPoetry) throw new Error('没有诗词了');
+
   const { author, paragraphs, title } = initPoetry;
   const lines: PoetryLine[] = [];
   paragraphs.forEach((paragraph, index) => {
@@ -64,23 +67,16 @@ export function randomPoetry(): Poetry {
       }
     }
   });
-  const answerLine = pickAnswerLine(lines);
-  return { author, title, lines, answerLine: answerLine };
+  const answerLine = pickAnswerLine(lines, initPoetry.answerLen);
+  return { author, title, lines, answerLine: answerLine, id: initPoetry.id };
 }
 
 /**
  * 随机选择一行作为答案
  */
-function pickAnswerLine(lines: PoetryLine[]): PoetryLine {
-  const lineCount = countBy(lines, (line) => line.lineNum);
-  // 一行诗词句大于4的去掉，排除一些特殊句
-  let filterCountLines = lines.filter((line) => lineCount[line.lineNum] <= 4);
-  if (!filterCountLines.length) filterCountLines = lines;
-  // TODO: 也许需要优化
-  // 随机取一个长度出现最多的句子
-  const mostLineSize = maxBy(Object.entries(countBy(filterCountLines, (line) => line.characters.length)), (item) => item[1])![0];
-  const filterLines = filterCountLines.filter((line) => line.characters.length === Number(mostLineSize));
-  const answerLine = sample(filterLines) || filterLines[0] || lines[0];
+function pickAnswerLine(lines: PoetryLine[], answerLen: number): PoetryLine {
+  const filterCountLines = lines.filter((line) => line.characters.length === answerLen);
+  const answerLine = sample(filterCountLines) || lines[0];
   if (answerLine) {
     answerLine.isAnswer = true;
   }
@@ -94,7 +90,7 @@ export type PoetryStore = {
   resetPoetry: () => PoetryLine;
   changeSelect: (key: string, isSelected?: boolean) => void;
   clearSelect: () => void;
-  commitSelect: () => boolean; // 提交选中，根据选中设置是否完成
+  commitSelect: () => string[]; // 提交选中，根据选中设置是否完成
 } & Poetry;
 export const usePoetryStore = create<PoetryStore>((set, get) => ({
   ...initSate,
@@ -124,18 +120,23 @@ export const usePoetryStore = create<PoetryStore>((set, get) => ({
   },
   commitSelect: () => {
     const { answerLine, selectedCharacterKey } = get();
-    if (selectedCharacterKey.length !== answerLine.characters.length) return false;
+    if (selectedCharacterKey.length !== answerLine.characters.length) return [];
     const diffAnswer = xorBy(
       answerLine.characters.map((char) => char.key),
       selectedCharacterKey,
     );
-    if (diffAnswer.length > 0) return false;
+    if (diffAnswer.length > 0) return [];
     set(
       produce((state: PoetryStore) => {
         state.answerLine.isComplete = true;
+        state.lines.forEach((line) => {
+          if (line.key === answerLine.key) {
+            line.isComplete = true;
+          }
+        });
       }),
     );
-    return true;
+    return answerLine.characters.map((char) => char.key);
   },
 }));
 

@@ -21,10 +21,13 @@ import type React from 'react';
 export const ActionBar = () => {
   const resetPoetry = useGridStore((store) => store.restart);
   const clearSelect = useGridStore((store) => store.clearSelect);
+  const commitSelect = useGridStore((store) => store.commitSelect);
   const setGridLen = useConfigStore((store) => store.setGridLen);
   const gridLen = useConfigStore((store) => store.gridLen);
   const setFullMatch = useConfigStore((store) => store.setFullMatch);
   const fullMatch = useConfigStore((store) => store.fullMatch);
+
+  const ableGridLen = useConfigStore((store) => store.ableGridLen);
 
   const handleGenerate = () => {
     resetPoetry();
@@ -32,6 +35,16 @@ export const ActionBar = () => {
 
   const handleReset = () => {
     clearSelect();
+  };
+
+  const handleFullMatch = (newFullMatch: boolean) => {
+    setFullMatch(newFullMatch);
+    commitSelect();
+  };
+
+  const handleGridLenChange = (e: string) => {
+    setGridLen(parseInt(e));
+    resetPoetry();
   };
 
   return (
@@ -58,20 +71,15 @@ export const ActionBar = () => {
               <div className="grid w-full items-center gap-4 pt-4 text-left">
                 <div className="flex flex-col space-y-1.5">
                   <Label className={classNames('text-2xl')}>表格长度</Label>
-                  <Select
-                    defaultValue={gridLen.toString()}
-                    onValueChange={(e) => {
-                      setGridLen(parseInt(e));
-                    }}
-                  >
+                  <Select defaultValue={gridLen.toString()} onValueChange={handleGridLenChange}>
                     <SelectTrigger>
                       <SelectValue placeholder="选择表格长度" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
-                        {new Array(7).fill(0).map((_, i) => (
-                          <SelectItem key={i} value={(i + 4).toString()} className={classNames('h-10')}>
-                            {i + 4}
+                        {ableGridLen.map((len) => (
+                          <SelectItem key={len} value={len.toString()} className={classNames('h-10')}>
+                            {len}
                           </SelectItem>
                         ))}
                       </SelectGroup>
@@ -80,7 +88,8 @@ export const ActionBar = () => {
                 </div>
                 <div className="flex flex-col space-y-1.5">
                   <Label className={classNames('text-2xl')}>是否要求完全匹配</Label>
-                  <Switch checked={fullMatch} id="map-mode" onCheckedChange={(e) => setFullMatch(e)} />
+                  {/* TODO 在小宽度下存在问题 */}
+                  <Switch checked={fullMatch} onCheckedChange={handleFullMatch} />
                 </div>
               </div>
             </AlertDialogHeader>

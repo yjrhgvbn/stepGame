@@ -6,8 +6,8 @@ import { create } from 'zustand';
 function convertToStyle(ref: React.RefObject<any>): Record<string, number | string> {
   if (!ref || !ref.current) return {};
   const { x, y } = ref.current.getBoundingClientRect();
-  const { fontSize } = window.getComputedStyle(ref.current);
-  return { x, y, fontSize };
+  const { fontSize, color, lineHeight } = window.getComputedStyle(ref.current);
+  return { x, y, fontSize, color, lineHeight };
 }
 
 // 管理动画

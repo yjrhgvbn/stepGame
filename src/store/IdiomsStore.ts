@@ -44,7 +44,7 @@ export interface IdiomsStore {
   /**
    * 提交选中，根据选中设置是否完成，只能提交一行
    */
-  commitSelect: () => boolean;
+  commitSelect: () => string[];
 }
 
 export const useIdiomsStore = create<IdiomsStore>((set, get) => ({
@@ -78,14 +78,14 @@ export const useIdiomsStore = create<IdiomsStore>((set, get) => ({
     );
   },
   commitSelect: () => {
-    let res = false;
+    let res: string[] = [];
     set(
       produce((state: IdiomsStore) => {
         const { idioms, selectIdiomKeys } = state;
         idioms.forEach((idiom) => {
           if (idiom.words.every(({ key }) => selectIdiomKeys.includes(key))) {
             idiom.isComplete = true;
-            res = true;
+            res = res.concat(idiom.words.map(({ key }) => key));
           }
         });
       }),

@@ -1,6 +1,7 @@
 import { clearAnimate } from '../Animate';
 import { randomChinese } from '../utils';
 import { IdiomsStore, useIdiomsStore } from './IdiomsStore';
+import { savePoetryComplete, useConfigStore } from './configStore';
 import { type Point, extendGrid, generateGrid, loopStartPoint, pickIdiomStartPoints } from './generateGrid';
 import { PoetryStore, usePoetryStore } from './poetryStore';
 import { clamp, remove } from 'lodash';
@@ -61,23 +62,33 @@ function generatePointGrid(answerLen: number) {
   return poetryGrid;
 }
 
-function pointLinkAnswerSelected(type: ResType, id: string, isSelect: boolean) {
+function getLinkByType(type: ResType) {
   let targetStore: PoetryStore | IdiomsStore;
   if (type === ResType.Poetry) {
     targetStore = usePoetryStore.getState();
   } else if (type === ResType.Idiom) {
     targetStore = useIdiomsStore.getState();
   } else {
-    return;
+    return null;
   }
-  targetStore.changeSelect(id, isSelect);
-  return targetStore.commitSelect();
+  return targetStore;
+}
+
+function selectPointLink(type: ResType, id: string, isSelect: boolean) {
+  const targetStore = getLinkByType(type);
+  targetStore?.changeSelect(id, isSelect);
+}
+
+function commitPointLink(type: ResType) {
+  const targetStore = getLinkByType(type);
+  return targetStore?.commitSelect();
 }
 
 interface GridStore {
   selectedPoints: PoetryPoint[];
   grid: PoetryPoint[][];
   changeSelect: (i: number, j: number, isSelected?: boolean) => void;
+  commitSelect: () => void;
   clearSelect: () => void;
   restart: () => void;
 }
@@ -88,18 +99,57 @@ export const useGridStore = create<GridStore>((set, get) => ({
   changeSelect: (i, j, isSelect = true) => {
     const { grid, selectedPoints } = get();
     const point = grid[i][j];
+    if (!point) throw new Error('point is null');
     point.isSelected = isSelect;
-    const isDone = pointLinkAnswerSelected(point.resType!, point.resId, isSelect);
-    if (isDone) {
-      loopStartPoint(point, (p) => {
-        remove(selectedPoints, (item) => item.resId === p.resId);
-        p.isComplete = true;
-      });
-    } else {
-      remove(selectedPoints, (item) => item.resId === point.resId);
-      if (isSelect) selectedPoints.push(point);
+    selectPointLink(point.resType!, point.resId, isSelect);
+    remove(selectedPoints, (item) => item.resId === point.resId);
+    if (isSelect) selectedPoints.push(point);
+    set({ grid: [...grid], selectedPoints: [...selectedPoints] });
+    get().commitSelect();
+  },
+  commitSelect: () => {
+    const { grid, selectedPoints } = get();
+    const commitByType = (type: ResType) => {
+      const keyList = commitPointLink(type);
+      if (keyList && keyList.length > 0) {
+        for (const key of keyList) {
+          const index = selectedPoints.findIndex((item) => item.resId === key);
+          if (index !== -1) {
+            if (selectedPoints[index].isComplete) {
+              selectedPoints.splice(index, 1);
+              continue;
+            }
+            loopStartPoint(selectedPoints[index], (point) => {
+              point.isComplete = true;
+            });
+            selectedPoints.splice(index, 1);
+          }
+        }
+        return true;
+      }
+      return false;
+    };
+    // TODO 根据长度长度这个待优化
+    const fullMatch = useConfigStore.getState().fullMatch;
+    if (fullMatch) {
+      const poetrySelectedKey = usePoetryStore.getState().selectedCharacterKey;
+      const answerLine = usePoetryStore.getState().answerLine;
+      const idiomSelectedKey = useIdiomsStore.getState().selectIdiomKeys;
+      if (poetrySelectedKey.length && poetrySelectedKey.length) {
+        return;
+      }
+      if (poetrySelectedKey.length && idiomSelectedKey.length !== answerLine.characters.length) {
+        return;
+      }
+      if (idiomSelectedKey.length && idiomSelectedKey.length !== 4) {
+        return;
+      }
     }
-    set({ grid: [...grid], selectedPoints: [...selectedPoints, point] });
+    commitByType(ResType.Idiom);
+    if (commitByType(ResType.Poetry)) {
+      savePoetryComplete(usePoetryStore.getState().id);
+    }
+    set({ grid: [...grid], selectedPoints: [...selectedPoints] });
   },
   clearSelect: () => {
     const { grid } = get();
