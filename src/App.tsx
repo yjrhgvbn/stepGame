@@ -1,8 +1,8 @@
 import { ActionBar } from './ActionBar';
-import { ConvertAnimate } from './Animate';
 import Grid from './Grid';
 import Idioms from './Idioms';
 import Poetry from './Poetry';
+import { ConvertAnimate } from './animate';
 import classNames from 'classnames';
 import { useWindowSize } from 'react-use';
 

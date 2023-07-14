@@ -1,4 +1,4 @@
-import { clearAnimate } from '../Animate';
+import { clearAnimate } from '../animate';
 import { randomChinese } from '../utils';
 import { IdiomsStore, useIdiomsStore } from './IdiomsStore';
 import { savePoetryComplete, useConfigStore } from './configStore';

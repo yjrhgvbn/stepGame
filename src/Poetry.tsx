@@ -1,5 +1,5 @@
 import { Card } from '../components/ui/card';
-import { startAnimate } from './Animate';
+import { startAnimate } from './animate';
 import { PoetryCharacter, PoetryLine, usePoetryStore } from './store/poetryStore';
 import classNames from 'classnames';
 import { useEffect, useRef } from 'react';

@@ -1,5 +1,5 @@
 import { Card } from '../components/ui/card';
-import { setAnimateFrom } from './Animate';
+import { setAnimateFrom } from './animate';
 import useConfigStore from './store/configStore';
 import { type Point } from './store/generateGrid';
 import { useGridStore } from './store/gridStore';

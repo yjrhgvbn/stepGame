@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
-import { startAnimate } from './Animate';
+import { startAnimate } from './animate';
 import { IdiomWord, useIdiomsStore } from './store/IdiomsStore';
 import classNames from 'classnames';
 import { useEffect, useRef } from 'react';
